@@ -1,22 +1,45 @@
+Editar na linha 360 do myCiencias.java - caminho absoluto do/dos pdf que vão ser utilizados
+
+Abrir o terminal e colocar na diretoria do projeto.
+
 Servidor:
 Executar:
-java -cp src src/servidor/myCienciasServer.java
+
+java -cp "libs/*:src" src/servidor/myCienciasServer.java
+
+A password do admin é: ola
+
+Caso queira começar um servidor novo é só apagar as keystores dos users, o ficheiro users e usersmac.
 
 Cliente:
-Compilar:
-javac -cp "libs/*;src" -d src src/cliente/myCiencias.java src/criptUtils/utils.java
 
-Executar:
-java -cp "libs/*;src" src/cliente/myCiencias.java
+Executar o comando -n :
 
-Editar na linha 367 do myCiencias.java - caminho absoluto do/dos pdf que vão ser utilizados
+java -cp "libs/*:src" src/cliente/myCiencias.java -a ip:23456 -n nomeuser passwd -k passwdkeystore
 
-pedro teste teste
-tiago teste teste
-tomas teste teste
-joao teste teste
+pedro -p teste -k teste
+tiago -p teste -k teste
+tomas -p teste -k teste
+joao -p teste -k teste
 
-certusers.keystore sigrupo14
+certusers.keystore passwd: sigrupo14
+
+Executar comando -c:
+
+java -cp "libs/*:src" src/cliente/myCiencias.java -a ip:23456 -e nomeuser -p passwd -k passwdkey -u nomeuserdestinatario -c nomeficheiro
+
+Executar comando -s:
+
+java -cp "libs/*:src" src/cliente/myCiencias.java -a ip:23456 -e nomeuser -p passwd -k passwdkey -u nomeuserdestinatario -s nomeficheiro
+
+Executar comando -b:
+
+java -cp "libs/*:src" src/cliente/myCiencias.java -a ip:23456 -e nomeuser -p passwd -k passwdkey -u nomeuserdestinatario -b nomeficheiro
+
+Executar comando -g:
+
+java -cp "libs/*:src" src/cliente/myCiencias.java -a ip:23456 -e nomeuser -p passwd -k passwdkey -g nomeficheiro
+
 
 # myCiencias - Secure Document Storage 🛡️📂
 
