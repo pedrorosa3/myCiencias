@@ -538,6 +538,21 @@ public class myCienciasServer {
         }
 
         /**
+         * Devolve o certificado de um utilizador guardado em certusers.keystore (ou null se não existir)
+         */
+        private byte[] certificadoDe(String user) {
+        	try (FileInputStream fis = new FileInputStream("certusers.keystore")) {
+        		KeyStore ks = KeyStore.getInstance("PKCS12");
+        		ks.load(fis, "sigrupo14".toCharArray());
+        		Certificate cert = ks.getCertificate(user);
+        		return cert == null ? null : cert.getEncoded();
+        	} catch (Exception e) {
+        		System.out.println("Erro ao obter o certificado de " + user);
+        		return null;
+        	}
+        }
+
+        /**
          * Método para enviar ficheiros solicitados pelo cliente
          */
         private void sendFilesToClient(ObjectInputStream inStream, ObjectOutputStream outStream, File userDir, String comando) throws IOException, ClassNotFoundException {
@@ -545,16 +560,24 @@ public class myCienciasServer {
                 // Ler pedido do cliente
             	
                 String requestedFileName = (String) inStream.readObject();
-                
-                
-                String ultimaParte = requestedFileName.substring(requestedFileName.lastIndexOf('.') + 1);
-                
-                
+
+
                 if (requestedFileName.equals("Terminou")) break;
-                
-                
-                
-                File requestedFile = new File(userDir+"/"+requestedFileName);
+
+
+                // Se o pedido vier sem extensão (ex.: diploma.pdf), procura .secure, .signed ou .encrypted
+                File requestedFile = new File(userDir, requestedFileName);
+                if (!requestedFile.exists()) {
+                	for (String ext : new String[]{".secure", ".signed", ".encrypted"}) {
+                		File candidato = new File(userDir, requestedFileName + ext);
+                		if (candidato.exists()) {
+                			requestedFile = candidato;
+                			break;
+                		}
+                	}
+                }
+
+                String ultimaParte = requestedFile.getName().substring(requestedFile.getName().lastIndexOf('.') + 1);
                 System.out.println(requestedFile.getName());
 
                 if (!requestedFile.exists()) {
@@ -613,20 +636,22 @@ public class myCienciasServer {
                     if(ficheiros.length>0) {
                     	nomeuser = ficheiros[0].getName().substring(ficheiros[0].getName().lastIndexOf('.') + 1);
                     	outStream.writeObject(nomeuser);
+                    	outStream.writeObject(certificadoDe(nomeuser));
                     }
                     else {
                     	flag=true;
                     	outStream.writeObject("não tem o file.");
+                    	outStream.writeObject(null);
                     }
-                    
-                    
-                    
+
+
+
                     if(flag) {
-                    	
+
                     	outStream.writeObject("ERRO: Ficheiro não encontrado");
                         continue;
                     }
-                    
+
                     File requestedFile2 = new File(userDir, requestedFileName2+nomeuser);
 
                     
@@ -659,7 +684,7 @@ public class myCienciasServer {
                     
                     File requestedFile2 = new File(userDir, requestedFileName2);
                     
-                    if(!(requestedFile.exists())) {
+                    if(!(requestedFile2.exists())) {
                     	
                     	outStream.writeObject("ERRO: Ficheiro não encontrado");
                         continue;
@@ -694,7 +719,7 @@ public class myCienciasServer {
                     
                     File requestedFile2 = new File(userDir, requestedFileName2);
                     
-                    if(!(requestedFile.exists())) {
+                    if(!(requestedFile2.exists())) {
                     	
                     	outStream.writeObject("ERRO: Ficheiro não encontrado");
                         continue;
@@ -734,20 +759,22 @@ public class myCienciasServer {
                     if(ficheiros.length>0) {
                     	nomeuser = ficheiros[0].getName().substring(ficheiros[0].getName().lastIndexOf('.') + 1);
                     	outStream.writeObject(nomeuser);
+                    	outStream.writeObject(certificadoDe(nomeuser));
                     }
                     else {
                     	flag=true;
                     	outStream.writeObject("não tem o file.");
+                    	outStream.writeObject(null);
                     }
-                    
-                    
-                    
+
+
+
                     if(flag) {
-                    	
+
                     	outStream.writeObject("ERRO: Ficheiro não encontrado");
                         continue;
                     }
-                    
+
                     File requestedFile3 = new File(userDir, requestedFileName3+nomeuser);
 
                     

@@ -6,17 +6,17 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/pedro/Downloads/bcprov-jdk18on-1.80.jar">
+	<classpathentry kind="lib" path="libs/bcprov-jdk18on-1.80.jar">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/pedro/Downloads/bcpkix-jdk18on-1.80.jar">
+	<classpathentry kind="lib" path="libs/bcpkix-jdk18on-1.80.jar">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/pedro/Downloads/bcutil-jdk18on-1.80.jar">
+	<classpathentry kind="lib" path="libs/bcutil-jdk18on-1.80.jar">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>

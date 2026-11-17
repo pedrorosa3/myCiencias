@@ -1,0 +1,7 @@
+# Compilação
+bin/
+*.class
+
+# Dados gerados durante a execução
+server_storage/
+Cliente_*/

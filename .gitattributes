@@ -1,0 +1,8 @@
+# Ficheiros cujo conteúdo é validado byte a byte (MAC) ou binários: não converter fins de linha
+users binary
+users.mac binary
+*.keystore binary
+*.server binary
+truststore.client binary
+*.jar binary
+*.pdf binary

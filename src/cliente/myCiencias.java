@@ -30,80 +30,84 @@ public class myCiencias {
 		System.out.println("Cliente: Grupo14");
 		myCiencias client = new myCiencias();
 		
-		if (args.length < 3) {
-            System.out.println("Uso: java myCiencias -a <serverAddress> -u <user-do-emissor> -e <user-destinatario> <comando> <nome-ficheiro>");
-            
-        }
-		else {
-			String serverAddress = args[1];
-			
-	        String[] serversplit = serverAddress.split(":");
-	        String ip = serversplit[0];
-	        int port = Integer.parseInt(serversplit[1]);
-	        String userEmissor = args[3];
-	        String comandonewuser=args[2];
-	        String userDestinatario = null;
-	        String comando = null;
-	        String[] ficheirossplit;
-	        String nomesFicheiros;
-	        String comandodecript;
-	        String passwd;
-	        String passwdkey;
-	        if(comandonewuser.equals("-n")) {
-	        	userDestinatario = args[4];
-	        	comando=args[2];
-	        	ficheirossplit=null;
-	        	nomesFicheiros=null;
-	        	comandodecript="nada";
-	        	passwd="criar";
-	        	passwdkey=args[6];
-	        	
-	        }
-	        
-	        
-	        
-	        
-	        
-	        
-	        else {
-	        	
-	        	comandodecript = args[8];
-		        passwd = args[5];
-		        passwdkey = args[7];
-		        
-	        	if(comandodecript.equals("-g")) {
-		        	
-		        	StringBuilder nomesFicheiros1 = new StringBuilder();
-			        for (int i = 9; i < args.length; i++) {
-			            nomesFicheiros1.append(args[i]).append(" ");
-			        }
-			        ficheirossplit = nomesFicheiros1.toString().trim().split(" ");
-			        
-			        nomesFicheiros = nomesFicheiros1.toString();
-			        
-			        userDestinatario = userEmissor;
-			        
-		        }
-		        else {
-		        	userDestinatario = args[9];
-			        comando = args[10];
-			        StringBuilder nomesFicheiros1 = new StringBuilder();
-			        for (int i = 11; i < args.length; i++) {
-			            nomesFicheiros1.append(args[i]).append(" ");
-			        }
-			        ficheirossplit = nomesFicheiros1.toString().trim().split(" ");
-			        
-			        nomesFicheiros = nomesFicheiros1.toString();
-		        }
-	        	
-	        }
-	        
-	        
-			client.startConnection(serverAddress,serversplit,ip,port,userEmissor,userDestinatario,comando,nomesFicheiros,ficheirossplit,comandodecript,passwd,passwdkey);
+		// Leitura dos argumentos por flags (a ordem das opções é livre)
+		String serverAddress = null, userEmissor = null, userDestinatario = null;
+		String passwd = null, passwdkey = null, comando = null, novaPasswd = null;
+		java.util.List<String> ficheiros = new java.util.ArrayList<>();
+
+		for (int i = 0; i < args.length; i++) {
+			String a = args[i];
+			switch (a) {
+				case "-a": serverAddress = valor(args, ++i, a); break;
+				case "-e": userEmissor = valor(args, ++i, a); break;
+				case "-p": passwd = valor(args, ++i, a); break;
+				case "-k": passwdkey = valor(args, ++i, a); break;
+				case "-u": userDestinatario = valor(args, ++i, a); break;
+				case "-n":
+					comando = a;
+					userEmissor = valor(args, ++i, a);
+					novaPasswd = valor(args, ++i, a);
+					break;
+				case "-c": case "-s": case "-b": case "-g":
+					comando = a;
+					// os ficheiros são todos os argumentos seguintes até à próxima opção
+					while (i + 1 < args.length && !isOpcao(args[i + 1])) {
+						ficheiros.add(args[++i]);
+					}
+					break;
+				default:
+					usoEsair("Argumento desconhecido: " + a);
+			}
 		}
-		
-		
-		
+
+		if (serverAddress == null || !serverAddress.contains(":")) usoEsair("Falta -a <ip>:<porta>");
+		if (comando == null) usoEsair("Falta o comando (-n, -c, -s, -b ou -g)");
+		if (userEmissor == null) usoEsair("Falta o utilizador (-e <user>)");
+		if (passwdkey == null) usoEsair("Falta a password da keystore (-k <password>)");
+
+		String comandodecript;
+		if (comando.equals("-n")) {
+			// no -n o campo do destinatário transporta a password do novo utilizador
+			userDestinatario = novaPasswd;
+			passwd = "criar";
+			comandodecript = "nada";
+		} else {
+			if (passwd == null) usoEsair("Falta a password do utilizador (-p <password>)");
+			if (ficheiros.isEmpty()) usoEsair("Indique pelo menos um ficheiro a seguir a " + comando);
+			if (comando.equals("-g")) {
+				comandodecript = "-g";
+				userDestinatario = userEmissor;
+			} else {
+				if (userDestinatario == null) usoEsair("Falta o destinatário (-u <user>)");
+				comandodecript = comando;
+			}
+		}
+
+		String[] serversplit = serverAddress.split(":");
+		String ip = serversplit[0];
+		int port = Integer.parseInt(serversplit[1]);
+		String[] ficheirossplit = comando.equals("-n") ? null : ficheiros.toArray(new String[0]);
+		String nomesFicheiros = comando.equals("-n") ? null : String.join(" ", ficheiros);
+
+		client.startConnection(serverAddress,serversplit,ip,port,userEmissor,userDestinatario,comando,nomesFicheiros,ficheirossplit,comandodecript,passwd,passwdkey);
+	}
+
+	private static boolean isOpcao(String s) {
+		return s.matches("-[aepkuncsbg]");
+	}
+
+	private static String valor(String[] args, int i, String opcao) {
+		if (i >= args.length || isOpcao(args[i])) usoEsair("Falta o valor de " + opcao);
+		return args[i];
+	}
+
+	private static void usoEsair(String erro) {
+		System.out.println("ERRO: " + erro);
+		System.out.println("Uso:");
+		System.out.println("  Criar utilizador: -a <ip>:<porta> -n <user> <password> -k <password-keystore>");
+		System.out.println("  Enviar:           -a <ip>:<porta> -e <user> -p <password> -k <password-keystore> -u <destinatario> (-c|-s|-b) <ficheiros...>");
+		System.out.println("  Obter:            -a <ip>:<porta> -e <user> -p <password> -k <password-keystore> -g <ficheiros...>");
+		System.exit(1);
 	}
 	
 	
@@ -351,20 +355,23 @@ public class myCiencias {
 	    	
 	    	
 	    	
-	        for (String file : ficheirossplit) {
-	        	
-	        	
-	        	
-	        	
-	            File file2 = new File("C:\\Users\\pedro\\Desktop\\"+file);
-	            
-	            //File file2 = new File("/home/ALUNOSFC/fc60294/Desktop/"+file);
-	            
+	        java.util.List<File> temporarios = new java.util.ArrayList<>();
 
-	            if (!file2.exists()) {
-	            	
-	                System.out.println("Ficheiro " + file + " não encontrado!");
+	        for (String caminho : ficheirossplit) {
+
+	            // O ficheiro é indicado por caminho (relativo à pasta atual ou absoluto)
+	            File file2 = new File(caminho);
+
+	            if (!file2.isFile()) {
+
+	                System.out.println("Ficheiro " + caminho + " não encontrado!");
 	                continue;
+	            }
+
+	            // Os ficheiros auxiliares (.encrypted, .signed, ...) usam apenas o nome do ficheiro
+	            String file = file2.getName();
+	            for (String ext : new String[]{".encrypted", ".signed", ".secure", ".signature." + userEmissor, ".secretKey." + userDestinatario}) {
+	            	temporarios.add(new File(file + ext));
 	            }
 				
 				
@@ -524,6 +531,11 @@ public class myCiencias {
 	        out.flush();
 	        String serverResponse2 = (String) in.readObject();
 	        System.out.println(serverResponse2);
+
+	        // Apagar os ficheiros auxiliares criados localmente para o envio
+	        for (File t : temporarios) {
+	        	t.delete();
+	        }
 	    }
 
 	    out.close();
@@ -575,7 +587,10 @@ public class myCiencias {
 	       
 	        String receivedFileName = (String) in.readObject();
 	        long fileSize = (long) in.readObject();
-	        
+
+	        // O servidor devolve o nome real (com extensão), mesmo que o pedido tenha sido feito sem ela
+	        fileName = receivedFileName;
+
 	        System.out.println(receivedFileName);
 	        System.out.println(fileSize);
 	       
@@ -718,9 +733,11 @@ public class myCiencias {
 		        out.writeObject(nomedoficheirosolo); 
 		        
 		        String userass = (String) in.readObject();
-		        
+
 		        System.out.println(userass);
-		       
+
+		        guardarCertificadoAssinante(user, userass, (byte[]) in.readObject(), passwdkey);
+
 		        
 		        String response1 = (String) in.readObject();
 		        
@@ -783,7 +800,7 @@ public class myCiencias {
 	            
 	        	
 	        	byte[] assinatura;
-	        	try(FileInputStream sig = new FileInputStream(receivedFileName2)){
+	        	try(FileInputStream sig = new FileInputStream(new File(pasta, receivedFileName2))){
 	        		assinatura = sig.readAllBytes();
 	        	}
 	        	
@@ -883,7 +900,9 @@ public class myCiencias {
 		        out.writeObject(nomedoficheirosolo2);  
 
 		        String useras = (String) in.readObject();
-		        
+
+		        guardarCertificadoAssinante(user, useras, (byte[]) in.readObject(), passwdkey);
+
 		        
 		        String response2 = (String) in.readObject();
 		        
@@ -936,7 +955,7 @@ public class myCiencias {
 	            
 	        	
 	        	byte[] assinatura;
-	        	try(FileInputStream sig = new FileInputStream(receivedFileName3)){
+	        	try(FileInputStream sig = new FileInputStream(new File(pasta, receivedFileName3))){
 	        		assinatura = sig.readAllBytes();
 	        	}
 	        	
@@ -966,6 +985,29 @@ public class myCiencias {
 
 	
 	
+	/**
+	 * Guarda na keystore local o certificado de quem assinou, caso ainda não exista.
+	 * O certificado é enviado pelo servidor (certusers.keystore) junto com o nome do assinante.
+	 */
+	private static void guardarCertificadoAssinante(String user, String assinante, byte[] certBytes, String passwdkey) throws Exception {
+		if (certBytes == null) {
+			return;
+		}
+		KeyStore ks = KeyStore.getInstance("PKCS12");
+		try (FileInputStream fis = new FileInputStream(user + ".keystore")) {
+			ks.load(fis, passwdkey.toCharArray());
+		}
+		if (ks.containsAlias(assinante)) {
+			return;
+		}
+		Certificate cert = CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(certBytes));
+		ks.setCertificateEntry(assinante, cert);
+		try (FileOutputStream fos = new FileOutputStream(user + ".keystore")) {
+			ks.store(fos, passwdkey.toCharArray());
+		}
+		System.out.println("Certificado de " + assinante + " obtido do servidor e guardado na keystore.");
+	}
+
 	private static void sendFile(ObjectInputStream in,ObjectOutputStream out, File file) throws IOException, ClassNotFoundException {
 		
         out.writeObject(file.getName());

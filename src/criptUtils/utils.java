@@ -129,8 +129,11 @@ public class utils {
 		KeyStore kstore = KeyStore.getInstance("PKCS12");
 		kstore.load(kfile2, passwdkey.toCharArray()); 
 		Certificate cert = kstore.getCertificate(userassinate);  // obter o certificado
-        PublicKey publicKey = cert.getPublicKey();   // chave pública
         kfile2.close();
+        if (cert == null) {
+            throw new KeyStoreException("Certificado de " + userassinate + " não encontrado na keystore de " + userDestinatario);
+        }
+        PublicKey publicKey = cert.getPublicKey();   // chave pública
         if (publicKey == null) {
             System.out.println("Erro: Não foi possível ler a chave pública!");
             return null;
@@ -143,18 +146,22 @@ public class utils {
 	public static void guardarKey (ObjectOutputStream out,String user, SecretKey aesKey, String file, String userEmissor,String passwdkey) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
 		
 		
-		FileInputStream kfile = new FileInputStream(user+".keystore");
-        KeyStore kstore = KeyStore.getInstance("PKCS12");
-        try {
+		// Usa a keystore do EMISSOR, onde está guardado o certificado do destinatário
+		KeyStore kstore = KeyStore.getInstance("PKCS12");
+		try (FileInputStream kfile = new FileInputStream(userEmissor+".keystore")) {
         	kstore.load(kfile, passwdkey.toCharArray());  // password da keystore
         }
-        
+
         catch(IOException e) {
         	System.out.println("Palavra passe da key store incorreta!");
     		return;
     	}
-        
+
         Certificate cert = kstore.getCertificate(user);
+        if (cert == null) {
+        	System.out.println("Erro: certificado de " + user + " não encontrado na keystore de " + userEmissor);
+        	return;
+        }
         PublicKey publicKey = cert.getPublicKey();
 
         // **Cifrar a chave secreta AES com a chave pública RSA**
